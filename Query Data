@@ -1,0 +1,144 @@
+SELECT
+    country_code AS country,
+    COUNT(store_code) AS total_no_stores
+FROM
+    DIM_STORE_TABLE
+GROUP BY
+    country_code
+ORDER BY
+    total_no_stores DESC;
+
+SELECT
+    locality,
+    COUNT(store_code) AS total_no_stores
+FROM
+    DIM_STORE_TABLE
+GROUP BY
+    locality
+ORDER BY
+    total_no_stores DESC
+LIMIT 7; -- Adjust the limit based on the number of locations you want to retrieve
+
+SELECT
+    SUM(order_amount) AS total_sales,
+    EXTRACT(MONTH FROM date_order_placed) AS month
+FROM
+    ORDERS_TABLE
+GROUP BY
+    month
+ORDER BY
+    total_sales DESC;
+
+SELECT
+    COUNT(*) AS number_of_sales,
+    SUM(product_quantity) AS product_quantity_count,
+    'Web' AS location
+FROM
+    ORDERS_TABLE
+WHERE
+    store_code IS NULL; -- Assuming NULL store_code represents online sales
+
+UNION
+
+SELECT
+    COUNT(*) AS number_of_sales,
+    SUM(product_quantity) AS product_quantity_count,
+    'Offline' AS location
+FROM
+    ORDERS_TABLE
+WHERE
+    store_code IS NOT NULL; -- Assuming non-NULL store_code represents offline sales
+
+WITH TotalSalesPerStoreType AS (
+    SELECT
+        s.store_type,
+        COALESCE(SUM(o.order_amount), 0) AS total_sales
+    FROM
+        DIM_STORE_TABLE s
+        LEFT JOIN ORDERS_TABLE o ON s.store_code = o.store_code
+    GROUP BY
+        s.store_type
+)
+
+SELECT
+    store_type,
+    total_sales,
+    (total_sales / SUM(total_sales) OVER ()) * 100 AS percentage_total
+FROM
+    TotalSalesPerStoreType
+ORDER BY
+    total_sales DESC;
+
+SELECT
+    SUM(order_amount) AS total_sales,
+    EXTRACT(YEAR FROM date_order_placed) AS year,
+    EXTRACT(MONTH FROM date_order_placed) AS month
+FROM
+    ORDERS_TABLE
+GROUP BY
+    year, month
+ORDER BY
+    total_sales DESC
+LIMIT 10; -- Adjust the limit based on the number of results you want
+
+SELECT
+    SUM(staff_numbers) AS total_staff_numbers,
+    country_code
+FROM
+    DIM_STORE_TABLE
+GROUP BY
+    country_code
+ORDER BY
+    total_staff_numbers DESC;
+
+SELECT
+    SUM(o.order_amount) AS total_sales,
+    s.store_type,
+    s.country_code
+FROM
+    ORDERS_TABLE o
+    JOIN DIM_STORE_TABLE s ON o.store_code = s.store_code
+WHERE
+    s.country_code = 'DE'
+GROUP BY
+    s.store_type, s.country_code
+ORDER BY
+    total_sales DESC;
+
+WITH SaleTimeGaps AS (
+    SELECT
+        EXTRACT(YEAR FROM date_order_placed) AS year,
+        LEAD(date_order_placed) OVER (PARTITION BY EXTRACT(YEAR FROM date_order_placed) ORDER BY date_order_placed) - date_order_placed AS actual_time_taken
+    FROM
+        ORDERS_TABLE
+)
+
+SELECT
+    year,
+    AVG(actual_time_taken) AS average_time_taken
+FROM
+    SaleTimeGaps
+GROUP BY
+    year
+ORDER BY
+    year;
+
+WITH SaleTimeGaps AS (
+    SELECT
+        EXTRACT(YEAR FROM date_order_placed) AS year,
+        LEAD(date_order_placed) OVER (PARTITION BY EXTRACT(YEAR FROM date_order_placed) ORDER BY date_order_placed) - date_order_placed AS actual_time_taken
+    FROM
+        ORDERS_TABLE
+)
+
+SELECT
+    year,
+    AVG(actual_time_taken) AS average_time_taken
+FROM
+    SaleTimeGaps
+GROUP BY
+    year
+ORDER BY
+    year;
+
+
