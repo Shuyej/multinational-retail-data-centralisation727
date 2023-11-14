@@ -1,0 +1,8 @@
+CREATE TABLE ORDERS_TABLE (
+    date_uuid UUID,
+    user_uuid UUID,
+    card_number VARCHAR(16), -- Replace 16 with the appropriate length for card numbers
+    store_code VARCHAR(10), -- Replace 10 with the appropriate length for store codes
+    product_code VARCHAR(20), -- Replace 20 with the appropriate length for product codes
+    product_quantity SMALLINT
+);
