@@ -1,0 +1,398 @@
+import csv
+import requests
+import boto3
+
+class DataExtractor:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def extract_from_csv(self, file_path):
+        # Code to extract data from CSV file
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            data = [row for row in reader]
+        return data
+
+    def extract_from_api(self, api_url):
+        # Code to extract data from API
+        response = requests.get(api_url)
+        data = response.json()
+        return data
+
+    def extract_from_s3(self, bucket_name, object_key):
+        # Code to extract data from S3 bucket
+        s3 = boto3.client('s3')
+        response = s3.get_object(Bucket=bucket_name, Key=object_key)
+        data = response['Body'].read().decode('utf-8')
+        # Process data as needed
+        return data
+
+
+import sqlite3
+
+class DatabaseConnector:
+    def __init__(self, database_name):
+        self.conn = sqlite3.connect(database_name)
+        self.cursor = self.conn.cursor()
+
+    def upload_to_database(self, data):
+        # Code to upload data to the database
+        # Example assumes a table named 'data_table'
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS data_table (column1, column2, ...)')
+        # Adapt the following line based on your data structure
+        self.cursor.executemany('INSERT INTO data_table VALUES (?, ?)', data)
+        self.conn.commit()
+
+    def close_connection(self):
+        self.conn.close()
+
+class DataCleaning:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def clean_csv_data(self, csv_data):
+        # Code to clean data from CSV source
+        # Example: Remove duplicates, handle missing values, etc.
+        cleaned_data = csv_data  # Placeholder, modify as needed
+        return cleaned_data
+
+    def clean_api_data(self, api_data):
+        # Code to clean data from API source
+        # Example: Remove unnecessary information, handle outliers, etc.
+        cleaned_data = api_data  # Placeholder, modify as needed
+        return cleaned_data
+
+    def clean_s3_data(self, s3_data):
+        # Code to clean data from S3 source
+        # Example: Convert data format, handle special characters, etc.
+        cleaned_data = s3_data  # Placeholder, modify as needed
+        return cleaned_data
+
+RDS_HOST: data-handling-project-readonly.cq2e8zno855e.eu-west-1.rds.amazonaws.com
+RDS_PASSWORD: AiCore2022
+RDS_USER: aicore_admin
+RDS_DATABASE: postgres
+RDS_PORT: 5432
+
+# In database_utils.py
+
+import yaml
+from sqlalchemy import create_engine
+
+class DatabaseConnector:
+    def __init__(self, database_name):
+        self.conn = None
+        self.cursor = None
+        self.database_name = database_name
+
+    def read_db_creds(self, creds_file="db_creds.yaml"):
+        with open(creds_file, 'r') as file:
+            creds = yaml.safe_load(file)
+        return creds
+
+    def init_db_engine(self):
+        creds = self.read_db_creds()
+        db_uri = f"postgresql+psycopg2://{creds['RDS_USER']}:{creds['RDS_PASSWORD']}@{creds['RDS_HOST']}:{creds['RDS_PORT']}/{creds['RDS_DATABASE']}"
+        engine = create_engine(db_uri)
+        return engine
+
+    def list_db_tables(self):
+        # Code to list all tables in the database
+        tables = self.conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'").fetchall()
+        return [table[0] for table in tables]
+
+    def upload_to_db(self, data_frame, table_name):
+        # Code to upload data to the specified table in the database
+        data_frame.to_sql(table_name, con=self.conn, if_exists='replace', index=False)
+
+    def connect(self):
+        self.conn = self.init_db_engine().connect()
+
+    def close_connection(self):
+        if self.conn:
+            self.conn.close()
+# In data_extraction.py
+
+import pandas as pd
+
+class DataExtractor:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def read_rds_table(self, db_connector, table_name):
+        # Code to read data from RDS database table to a pandas DataFrame
+        query = f"SELECT * FROM {table_name}"
+        result = db_connector.conn.execute(query)
+        data_frame = pd.DataFrame(result.fetchall(), columns=result.keys())
+        return data_frame
+# In data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def clean_user_data(self, user_data):
+        # Code to clean user data, handle NULL values, date errors, etc.
+        cleaned_data = user_data  # Placeholder, modify as needed
+        return cleaned_data
+# Example of how to use the classes and methods
+from database_utils import DatabaseConnector
+from data_extraction import DataExtractor
+from data_cleaning import DataCleaning
+
+# Step 2
+db_connector = DatabaseConnector("sales_data")
+db_connector.connect()
+
+# Step 4
+data_extractor = DataExtractor()
+tables = db_connector.list_db_tables()
+user_table_name = "dim_users"  # Modify based on your actual table name
+
+# Step 5
+user_data = data_extractor.read_rds_table(db_connector, user_table_name)
+
+# Step 6
+data_cleaner = DataCleaning()
+cleaned_user_data = data_cleaner.clean_user_data(user_data)
+
+# Step 7
+db_connector.upload_to_db(cleaned_user_data, "dim_users")  # Step 8
+
+# Close the connection
+db_connector.close_connection()
+
+# In data_extraction.py
+
+import tabula
+
+class DataExtractor:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def retrieve_pdf_data(self, pdf_link):
+        # Code to extract data from PDF using tabula-py
+        pdf_data = tabula.read_pdf(pdf_link, pages='all', multiple_tables=True)
+        # Assuming pdf_data is a list of DataFrames, you might need to adjust this based on the actual structure
+        combined_data = pd.concat(pdf_data, ignore_index=True)
+        return combined_data
+# In data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def clean_card_data(self, card_data):
+        # Code to clean card data, remove erroneous values, handle NULL values, etc.
+        cleaned_data = card_data  # Placeholder, modify as needed
+        return cleaned_data
+# Example of how to use the classes and methods
+from database_utils import DatabaseConnector
+from data_extraction import DataExtractor
+from data_cleaning import DataCleaning
+
+# Step 2
+pdf_link = "https://your-s3-bucket-link/your-pdf-document.pdf"  # Replace with your actual S3 bucket link and PDF document
+data_extractor = DataExtractor()
+card_data = data_extractor.retrieve_pdf_data(pdf_link)
+
+# Step 3
+data_cleaner = DataCleaning()
+cleaned_card_data = data_cleaner.clean_card_data(card_data)
+
+# Step 7
+db_connector = DatabaseConnector("sales_data")
+db_connector.connect()
+db_connector.upload_to_db(cleaned_card_data, "dim_card_details")
+
+# Close the connection
+db_connector.close_connection()
+
+# In data_extraction.py
+
+import requests
+
+class DataExtractor:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def list_number_of_stores(self, number_of_stores_endpoint, headers):
+        # Code to retrieve the number of stores from the API
+        response = requests.get(number_of_stores_endpoint, headers=headers)
+        return response.json()['count'] if response.status_code == 200 else None
+
+    def retrieve_stores_data(self, retrieve_store_endpoint, headers):
+        # Code to retrieve all stores from the API and save them in a pandas DataFrame
+        response = requests.get(retrieve_store_endpoint, headers=headers)
+        stores_data = response.json() if response.status_code == 200 else None
+        # Assuming stores_data is a list of dictionaries, you might need to adjust this based on the actual structure
+        data_frame = pd.DataFrame(stores_data)
+        return data_frame
+
+# In data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def clean_store_data(self, store_data):
+        # Code to clean store data, handle NULL values, errors with formatting, etc.
+        cleaned_data = store_data  # Placeholder, modify as needed
+        return cleaned_data
+
+# In data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def clean_store_data(self, store_data):
+        # Code to clean store data, handle NULL values, errors with formatting, etc.
+        cleaned_data = store_data  # Placeholder, modify as needed
+        return cleaned_data
+
+# In data_extraction.py
+
+import boto3
+import pandas as pd
+
+class DataExtractor:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def extract_from_s3(self, s3_address):
+        # Code to download and extract data from S3 bucket and return a pandas DataFrame
+        s3 = boto3.client('s3')
+        bucket, key = s3_address.split('//')[1].split('/', 1)
+        obj = s3.get_object(Bucket=bucket, Key=key)
+        data_frame = pd.read_csv(obj['Body'])
+        return data_frame
+
+# In data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def convert_product_weights(self, products_data):
+        # Code to convert and clean the product weights column
+        # Assuming 'weight' column exists, modify as needed based on the actual structure
+        products_data['weight'] = products_data['weight'].apply(self._convert_weight)
+        return products_data
+
+    def _convert_weight(self, weight_str):
+        # Helper method to convert weights to decimal values in kg
+        # Modify as needed based on the actual formats in your data
+        if 'ml' in weight_str:
+            return float(weight_str.replace('ml', '')) / 1000  # Convert ml to kg
+        elif 'g' in weight_str:
+            return float(weight_str.replace('g', '')) / 1000  # Convert g to kg
+        else:
+            try:
+                return float(weight_str)
+            except ValueError:
+                return None
+
+    def clean_products_data(self, products_data):
+        # Code to clean the products DataFrame of any additional erroneous values
+        cleaned_data = products_data  # Placeholder, modify as needed
+        return cleaned_data
+
+# Example of how to use the classes and methods
+from database_utils import DatabaseConnector
+from data_extraction import DataExtractor
+from data_cleaning import DataCleaning
+
+# S3 address for products data
+s3_products_address = "s3://data-handling-public/products.csv"
+
+# Step 1
+data_extractor = DataExtractor()
+products_data = data_extractor.extract_from_s3(s3_products_address)
+
+# Step 2
+data_cleaner = DataCleaning()
+products_data = data_cleaner.convert_product_weights(products_data)
+
+# Step 3
+products_data = data_cleaner.clean_products_data(products_data)
+
+# Step 7
+db_connector = DatabaseConnector("sales_data")
+db_connector.connect()
+db_connector.upload_to_db(products_data, "dim_products")
+
+# Close the connection
+db_connector.close_connection()
+
+# In database_utils.py
+
+class DatabaseConnector:
+    def __init__(self, database_name):
+        self.conn = None
+        self.cursor = None
+        self.database_name = database_name
+
+    def list_db_tables(self):
+        # Code to list all tables in the database
+        tables = self.conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'").fetchall()
+        return [table[0] for table in tables]
+
+    def read_rds_table(self, table_name):
+        # Code to read data from RDS database table to a pandas DataFrame
+        query = f"SELECT * FROM {table_name}"
+        result = self.conn.execute(query)
+        data_frame = pd.DataFrame(result.fetchall(), columns=result.keys())
+        return data_frame
+
+# Example of how to use the classes and methods
+from database_utils import DatabaseConnector
+from data_cleaning import DataCleaning
+
+# Step 1
+db_connector = DatabaseConnector("sales_data")
+db_connector.connect()
+tables = db_connector.list_db_tables()
+orders_table_name = "orders_table"  # Modify based on your actual table name
+
+# Step 2
+data_cleaner = DataCleaning()
+orders_data = data_cleaner.read_rds_table(db_connector, orders_table_name)
+
+# Step 3
+cleaned_orders_data = data_cleaner.clean_orders_data(orders_data)
+
+# Step 7
+db_connector.upload_to_db(cleaned_orders_data, "orders_table")
+
+# Close the connection
+db_connector.close_connection()
+
+# In data_cleaning.py
+
+class DataCleaning:
+    def __init__(self):
+        # Any initialization code here
+        pass
+
+    def clean_orders_data(self, orders_data):
+        # Code to clean orders table data
+        # Remove specified columns
+        columns_to_remove = ['first_name', 'last_name', '1']
+        orders_data = orders_data.drop(columns=columns_to_remove, errors='ignore')
+
+        # Placeholder for additional cleaning steps as needed
+        cleaned_data = orders_data  # Modify as needed
+        return cleaned_data
+
